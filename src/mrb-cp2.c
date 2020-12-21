@@ -329,7 +329,7 @@ void xioDirectionSet()
 	i2cBuf[2] = 0;
 	i2cBuf[3] = 0;
 	i2cBuf[4] = 0;
-	i2cBuf[5] = 0x50;
+	i2cBuf[5] = 0x40;
 	i2cBuf[6] = 0x05;
 	i2c_transmit(i2cBuf, 7, 1);
 	while(i2c_busy());
