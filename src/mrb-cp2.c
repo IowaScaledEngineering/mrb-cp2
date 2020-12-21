@@ -966,43 +966,35 @@ Byte
 			uint8_t txBuffer[MRBUS_BUFFER_SIZE];
 			txBuffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
 			txBuffer[MRBUS_PKT_DEST] = 0xFF;
-			txBuffer[MRBUS_PKT_LEN] = 14;
+			txBuffer[MRBUS_PKT_LEN] = 11;
 			txBuffer[5] = 'S';
-
 			txBuffer[6] = ((signalHeads[SIG_SIDING]<<4) & 0xF0) | (signalHeads[SIG_MAIN] & 0x0F);
 			txBuffer[7] = ((signalHeads[SIG_PNTS_UPPER]<<4) & 0xF0) | (signalHeads[SIG_PNTS_LOWER] & 0x0F);
-
-			txBuffer[10] = (occupancy & 0x0F) | (turnouts & 0xF0);
+			txBuffer[8] = occupancy;
 			
 			switch(GetClearance(CONTROLPOINT_1))
 			{
 				case CLEARANCE_EAST:
-					txBuffer[11] = MRB_STATUS_CP_CLEARED_EAST;
+					txBuffer[9] = MRB_STATUS_CP_CLEARED_EAST;
 					break;
 				case CLEARANCE_WEST:
-					txBuffer[11] = MRB_STATUS_CP_CLEARED_WEST;
+					txBuffer[9] = MRB_STATUS_CP_CLEARED_WEST;
 					break;
 				case CLEARANCE_NONE:
 				default:
-					txBuffer[11] = MRB_STATUS_CP_CLEARED_NONE;
+					txBuffer[9] = MRB_STATUS_CP_CLEARED_NONE;
 					break;
 			}
 
 			if (STATE_LOCKED != turnoutState)
-				txBuffer[11] |= MRB_STATUS_CP_MANUAL_UNLOCK;
+				txBuffer[9] |= MRB_STATUS_CP_MANUAL_UNLOCK;
 
 			if (turnouts & PNTS_STATUS)  // Low is normal, high is reverse
-				txBuffer[11] |= MRB_STATUS_CP_SWITCH_REVERSE;
+				txBuffer[9] |= MRB_STATUS_CP_SWITCH_REVERSE;
 			else
-				txBuffer[11] |= MRB_STATUS_CP_SWITCH_NORMAL;
-				
-			if (occupancy & OCC_VIRT_M_ADJOIN)
-				txBuffer[11] |= MRB_STATUS_CP_VOCC_ADJOIN;
-			if (occupancy & OCC_VIRT_M_APPROACH)
-				txBuffer[11] |= MRB_STATUS_CP_VOCC_APPROACH;
+				txBuffer[9] |= MRB_STATUS_CP_SWITCH_NORMAL;
 
-
-			txBuffer[13] = i2cResetCounter;
+			txBuffer[10] = i2cResetCounter;
 			mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
 			changed = 0;
 		}
