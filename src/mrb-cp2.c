@@ -719,17 +719,28 @@ static inline void vitalLogic()
 	// Calculate east CP virtual occupancies
 	if(!(((turnouts & (PNTS_STATUS))?1:0) ^ ((turnouts & (PNTS_CNTL))?1:0)))
 	{
+		if(ASPECT_FL_RED == signalHeads[SIG_MAIN] || ASPECT_RED == signalHeads[SIG_MAIN])
+			occupancy |= OCC_VIRT_M_ADJOIN;
+		else if (ASPECT_YELLOW == signalHeads[SIG_MAIN])
+			occupancy |= OCC_VIRT_M_APPROACH;
+
+		if(ASPECT_FL_RED == signalHeads[SIG_SIDING] || ASPECT_RED == signalHeads[SIG_SIDING])
+			occupancy |= OCC_VIRT_S_ADJOIN;
+		else if (ASPECT_YELLOW == signalHeads[SIG_SIDING])
+			occupancy |= OCC_VIRT_S_APPROACH;
+
+		
 		// Turnout is properly lined one way or the other
 		if ((turnouts & PNTS_STATUS) && ( ASPECT_YELLOW == signalHeads[SIG_PNTS_LOWER] ))
 			occupancy |= OCC_VIRT_P_APPROACH;
 		else if ((!(turnouts & PNTS_STATUS)) && ( ASPECT_YELLOW == signalHeads[SIG_PNTS_UPPER] ))
 			occupancy |= OCC_VIRT_P_APPROACH;
 	
-		if ((ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER]) && (ASPECT_RED == signalHeads[SIG_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_UPPER]))
-			occupancy |= OCC_VIRT_P_ADJOIN;
+		if ((ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER] || ASPECT_RED == signalHeads[SIG_PNTS_LOWER]) && (ASPECT_RED == signalHeads[SIG_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_UPPER]))
+			occupancy |= OCC_VIRT_P_ADJOIN | OCC_VIRT_M_ADJOIN | OCC_VIRT_S_ADJOIN;
 	} else {
 		// East Control Point improperly lined, trip virtual occupancy
-			occupancy |= OCC_VIRT_P_APPROACH | OCC_VIRT_P_ADJOIN;
+			occupancy |= OCC_VIRT_P_ADJOIN | OCC_VIRT_M_ADJOIN | OCC_VIRT_S_ADJOIN;
 	}
 
 }
@@ -845,24 +856,6 @@ int main(void)
 					break;
 			} 
 
-			// Get the physical occupancy inputs from debounced
-			
-			// Figure out which occupancies are local or remote
-			// Local occupancies will have 0xFF in the MRBus address for source
-			uint8_t remoteOccupancyMask = 0x0F;
-			for(i=0; i<4; i++)
-			{
-				switch(i)
-				{
-					case 0:
-						if (0xFF == eeprom_read_byte((uint8_t*)(EE_OS_ADDR)))
-							remoteOccupancyMask &= ~OCC_OS_SECT;
-						break;
-				}
-			}
-
-			occupancy &= 0xF0 | remoteOccupancyMask;
-			occupancy |= (0x0F & (~remoteOccupancyMask)) & (debounced_inputs[1]>>4);
 			turnouts &= ~(PNTS_STATUS);
 			turnouts |= debounced_inputs[0] & (PNTS_STATUS);
 
