@@ -737,7 +737,7 @@ static inline void vitalLogic()
 			occupancy |= OCC_VIRT_P_APPROACH;
 	
 		if ((ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER] || ASPECT_RED == signalHeads[SIG_PNTS_LOWER]) && (ASPECT_RED == signalHeads[SIG_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_UPPER]))
-			occupancy |= OCC_VIRT_P_ADJOIN | OCC_VIRT_M_ADJOIN | OCC_VIRT_S_ADJOIN;
+			occupancy |= OCC_VIRT_P_ADJOIN;
 	} else {
 		// East Control Point improperly lined, trip virtual occupancy
 			occupancy |= OCC_VIRT_P_ADJOIN | OCC_VIRT_M_ADJOIN | OCC_VIRT_S_ADJOIN;
