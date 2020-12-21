@@ -96,15 +96,13 @@ volatile uint8_t events = 0;
 #define PNTS_TIMELOCK_LED     0x01
 
 #define PNTS_LOCAL_DIR        0x01
-#define PNTS_UNLOCK           0x02
-#define PNTS_CNTL             0x04
-#define PNTS_STATUS           0x08
+#define PNTS_UNLOCK           0x04
+#define PNTS_CNTL             0x10
+#define PNTS_STATUS           0x40
 
 // EEPROM Location Definitions
 #define EE_HEADS_COM_ANODE    0x07
 #define EE_OPTIONS            0x08
-// 0x01 - Reverse E turnout direction
-// 0x02 - Reverse W turnout direction
 
 #define EE_UNLOCK_TIME        0x09
 // Unlock time in decisecs
@@ -705,11 +703,11 @@ static inline void vitalLogic()
 			if ( ((OCC_OS_SECT) & occupancy) || (XOCC_M_ADJOIN & ext_occupancy))
 				signalHeads[SIG_PNTS_UPPER] = ASPECT_RED;
 			else if (XOCC_M_APPROACH & ext_occupancy)
-				signalHeads[SIG_PNTS_LOWER] = ASPECT_YELLOW;
+				signalHeads[SIG_PNTS_UPPER] = ASPECT_YELLOW;
 			else if (XOCC_M_APPROACH2 & ext_occupancy)
-				signalHeads[SIG_PNTS_LOWER] = ASPECT_FL_YELLOW;
+				signalHeads[SIG_PNTS_UPPER] = ASPECT_FL_YELLOW;
 			else
-				signalHeads[SIG_PNTS_LOWER] = ASPECT_GREEN;
+				signalHeads[SIG_PNTS_UPPER] = ASPECT_GREEN;
 		}
 	}
 	// The else case is that the turnout isn't locked up or we're not cleared
