@@ -1,15 +1,15 @@
 /*************************************************************************
-Title:    MRBus CTC Siding Control Node
+Title:    MRBus Simple CTC Control Point Node
 Authors:  Nathan D. Holmes <maverick@drgw.net>
 File:     $Id: $
 License:  GNU General Public License v3
 
 LICENSE:
-    Copyright (C) 2014 Nathan Holmes
+    Copyright (C) 2020 Nathan Holmes
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
+    the Free Software Foundation; either version 3 of the License, or
     any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -41,8 +41,7 @@ typedef enum
 	STATE_RELOCKING = 3
 } turnoutState_t;
 
-turnoutState_t eastTurnoutState = STATE_LOCKED;
-turnoutState_t westTurnoutState = STATE_LOCKED;
+turnoutState_t turnoutState = STATE_LOCKED;
 
 void PktHandler(void);
 
@@ -60,8 +59,7 @@ volatile uint8_t events = 0;
 #define EVENT_I2C_ERROR      0x40
 #define EVENT_BLINKY         0x80
 
-#define E_CONTROLPOINT       0x01
-#define W_CONTROLPOINT       0x02
+#define CONTROLPOINT_1       0x01
 
 #define CLEARANCE_NONE		0x00
 #define CLEARANCE_EAST		0x01
@@ -73,41 +71,36 @@ volatile uint8_t events = 0;
 #define POINTS_REVERSE_FORCE  'd'
 #define POINTS_UNAFFECTED     'X'
 
-#define OCC_CTC_MAIN				0x08
-#define OCC_CTC_SIDING			0x04
-#define OCC_E_OS_SECT			0x02
-#define OCC_W_OS_SECT			0x01
-#define OCC_VIRT_E_ADJOIN     0x10
-#define OCC_VIRT_E_APPROACH   0x20
-#define OCC_VIRT_W_ADJOIN     0x40
-#define OCC_VIRT_W_APPROACH   0x80
+#define OCC_OS_SECT           0x01
+#define OCC_VIRT_P_ADJOIN     0x02
+#define OCC_VIRT_P_APPROACH   0x04
+#define OCC_VIRT_M_ADJOIN     0x10
+#define OCC_VIRT_M_APPROACH   0x20
+#define OCC_VIRT_S_ADJOIN     0x40
+#define OCC_VIRT_S_APPROACH   0x80
 
-#define XOCC_E_ADJOIN			0x01
-#define XOCC_E_APPROACH			0x02
-#define XOCC_E_APPROACH2		0x04
-#define XOCC_E_TUMBLE         0x08
-#define XOCC_W_ADJOIN			0x10
-#define XOCC_W_APPROACH			0x20
-#define XOCC_W_APPROACH2		0x40
-#define XOCC_W_TUMBLE         0x80
+#define XOCC_P_ADJOIN         0x01
+#define XOCC_P_APPROACH       0x02
+#define XOCC_P_APPROACH2      0x04
+#define XOCC_P_TUMBLE         0x08
+#define XOCC_M_ADJOIN         0x10
+#define XOCC_M_APPROACH       0x20
+#define XOCC_M_APPROACH2      0x40
+#define XOCC_M_TUMBLE         0x80
 
+#define XOCC2_S_ADJOIN        0x01
+#define XOCC2_S_APPROACH      0x02
+#define XOCC2_S_APPROACH2     0x04
+#define XOCC2_S_TUMBLE        0x08
 
-#define E_PNTS_TIMELOCK_LED   0x01
-#define W_PNTS_TIMELOCK_LED   0x02
+#define PNTS_TIMELOCK_LED     0x01
 
-#define E_PNTS_LOCAL_DIR    0x01
-#define W_PNTS_LOCAL_DIR    0x02
-#define E_PNTS_UNLOCK       0x04
-#define W_PNTS_UNLOCK       0x08
-
-#define E_PNTS_CNTL         0x10
-#define W_PNTS_CNTL         0x20
-#define E_PNTS_STATUS       0x40
-#define W_PNTS_STATUS       0x80
+#define PNTS_LOCAL_DIR        0x01
+#define PNTS_UNLOCK           0x02
+#define PNTS_CNTL             0x04
+#define PNTS_STATUS           0x08
 
 // EEPROM Location Definitions
-
-
 #define EE_HEADS_COM_ANODE    0x07
 #define EE_OPTIONS            0x08
 // 0x01 - Reverse E turnout direction
@@ -116,58 +109,61 @@ volatile uint8_t events = 0;
 #define EE_UNLOCK_TIME        0x09
 // Unlock time in decisecs
 
+#define EE_P_APRCH_ADDR       0x10
+#define EE_P_APRCH2_ADDR      0x11
+#define EE_P_ADJ_ADDR         0x12
+#define EE_M_APRCH_ADDR       0x13
+#define EE_M_APRCH2_ADDR      0x14
+#define EE_M_ADJ_ADDR         0x15
+#define EE_S_APRCH_ADDR       0x16
+#define EE_S_APRCH2_ADDR      0x17
+#define EE_S_ADJ_ADDR         0x18
+#define EE_P_TUMBLE_ADDR      0x19
+#define EE_M_TUMBLE_ADDR      0x1A
+#define EE_S_TUMBLE_ADDR      0x1B
+#define EE_OS_ADDR            0x1C
 
-#define EE_E_APRCH_ADDR       0x10
-#define EE_E_APRCH2_ADDR      0x11
-#define EE_E_ADJ_ADDR         0x12
-#define EE_W_APRCH_ADDR       0x13
-#define EE_W_APRCH2_ADDR      0x14
-#define EE_W_ADJ_ADDR         0x15
-#define EE_E_TUMBLE_ADDR      0x16
-#define EE_W_TUMBLE_ADDR      0x17
-#define EE_E_OS_ADDR          0x18
-#define EE_W_OS_ADDR          0x19
-#define EE_MAIN_ADDR          0x1A
-#define EE_SIDING_ADDR        0x1B
+#define EE_P_APRCH_PKT        0x20
+#define EE_P_APRCH2_PKT       0x21
+#define EE_P_ADJ_PKT          0x22
+#define EE_M_APRCH_PKT        0x23
+#define EE_M_APRCH2_PKT       0x24
+#define EE_M_ADJ_PKT          0x25
+#define EE_S_APRCH_PKT        0x26
+#define EE_S_APRCH2_PKT       0x27
+#define EE_S_ADJ_PKT          0x28
+#define EE_P_TUMBLE_PKT       0x29
+#define EE_M_TUMBLE_PKT       0x2A
+#define EE_S_TUMBLE_PKT       0x2B
+#define EE_OS_PKT             0x2C
 
-#define EE_E_APRCH_PKT        0x20
-#define EE_E_APRCH2_PKT       0x21
-#define EE_E_ADJ_PKT          0x22
-#define EE_W_APRCH_PKT        0x23
-#define EE_W_APRCH2_PKT       0x24
-#define EE_W_ADJ_PKT          0x25
-#define EE_E_TUMBLE_PKT       0x26
-#define EE_W_TUMBLE_PKT       0x27
-#define EE_E_OS_PKT           0x28
-#define EE_W_OS_PKT           0x29
-#define EE_MAIN_PKT           0x2A
-#define EE_SIDING_PKT         0x2B
+#define EE_P_APRCH_BITBYTE    0x30
+#define EE_P_APRCH2_BITBYTE   0x31
+#define EE_P_ADJ_BITBYTE      0x32
+#define EE_M_APRCH_BITBYTE    0x33
+#define EE_M_APRCH2_BITBYTE   0x34
+#define EE_M_ADJ_BITBYTE      0x35
+#define EE_S_APRCH_BITBYTE    0x36
+#define EE_S_APRCH2_BITBYTE   0x37
+#define EE_S_ADJ_BITBYTE      0x38
+#define EE_P_TUMBLE_BITBYTE   0x39
+#define EE_M_TUMBLE_BITBYTE   0x3A
+#define EE_S_TUMBLE_BITBYTE   0x3B
+#define EE_OS_BITBYTE         0x3C
 
-#define EE_E_APRCH_BITBYTE    0x30
-#define EE_E_APRCH2_BITBYTE   0x31
-#define EE_E_ADJ_BITBYTE      0x32
-#define EE_W_APRCH_BITBYTE    0x33
-#define EE_W_APRCH2_BITBYTE   0x34
-#define EE_W_ADJ_BITBYTE      0x35
-#define EE_E_TUMBLE_BITBYTE   0x36
-#define EE_W_TUMBLE_BITBYTE   0x37
-#define EE_E_OS_BITBYTE       0x38
-#define EE_W_OS_BITBYTE       0x39
-#define EE_MAIN_BITBYTE       0x3A
-#define EE_SIDING_BITBYTE     0x3B
-
-#define EE_E_APRCH_SUBTYPE    0x40
-#define EE_E_APRCH2_SUBTYPE   0x41
-#define EE_E_ADJ_SUBTYPE      0x42
-#define EE_W_APRCH_SUBTYPE    0x43
-#define EE_W_APRCH2_SUBTYPE   0x44
-#define EE_W_ADJ_SUBTYPE      0x45
-#define EE_E_TUMBLE_SUBTYPE   0x46
-#define EE_W_TUMBLE_SUBTYPE   0x47
-#define EE_E_OS_SUBTYPE       0x48
-#define EE_W_OS_SUBTYPE       0x49
-#define EE_MAIN_SUBTYPE       0x4A
-#define EE_SIDING_SUBTYPE     0x4B
+#define EE_P_APRCH_SUBTYPE    0x40
+#define EE_P_APRCH2_SUBTYPE   0x41
+#define EE_P_ADJ_SUBTYPE      0x42
+#define EE_M_APRCH_SUBTYPE    0x43
+#define EE_M_APRCH2_SUBTYPE   0x44
+#define EE_M_ADJ_SUBTYPE      0x45
+#define EE_S_APRCH_SUBTYPE    0x46
+#define EE_S_APRCH2_SUBTYPE   0x47
+#define EE_S_ADJ_SUBTYPE      0x48
+#define EE_P_TUMBLE_SUBTYPE   0x49
+#define EE_M_TUMBLE_SUBTYPE   0x4A
+#define EE_S_TUMBLE_SUBTYPE   0x4B
+#define EE_OS_SUBTYPE         0x4C
 
 
 
@@ -175,6 +171,7 @@ uint8_t debounced_inputs[2], old_debounced_inputs[2];
 uint8_t clearance, old_clearance;
 uint8_t occupancy, old_occupancy;
 uint8_t ext_occupancy, old_ext_occupancy;
+uint8_t ext_occupancy2, old_ext_occupancy2;
 uint8_t turnouts, old_turnouts;
 uint8_t clock_a[2] = {0,0}, clock_b[2] = {0,0};
 uint8_t signalHeads[8], old_signalHeads[8];
@@ -206,14 +203,10 @@ uint8_t PktDirToClearance(uint8_t pktDir)
 
 // Signal Head Definitions
 
-#define SIG_E_PNTS_UPPER 0
-#define SIG_E_PNTS_LOWER 1
-#define SIG_E_MAIN       2
-#define SIG_E_SIDING     3
-#define SIG_W_PNTS_UPPER 4
-#define SIG_W_PNTS_LOWER 5
-#define SIG_W_MAIN       6
-#define SIG_W_SIDING     7
+#define SIG_PNTS_UPPER 0
+#define SIG_PNTS_LOWER 1
+#define SIG_MAIN       2
+#define SIG_SIDING     3
 
 // ******** Start 100 Hz Timer, 0.16% error version (Timer 0)
 // If you can live with a slightly less accurate timer, this one only uses Timer 0, leaving Timer 1 open
@@ -233,8 +226,7 @@ volatile uint8_t blinkyCounter = 0;
 volatile uint8_t buttonLockout=5;
 
 uint8_t i2cResetCounter = 0;
-volatile uint8_t eastTimeCounter = 0;
-volatile uint8_t westTimeCounter = 0;
+volatile uint8_t timeCounter = 0;
 
 void initialize100HzTimer(void)
 {
@@ -267,12 +259,8 @@ ISR(TIMER0_COMPA_vect)
 		if (buttonLockout != 0)
 			buttonLockout--;
 
-		if (0 != eastTimeCounter)
-			eastTimeCounter--;
-
-		if (0 != westTimeCounter)
-			westTimeCounter--;
-
+		if (0 != timeCounter)
+			timeCounter--;
 
 		events |= EVENT_WRITE_OUTPUTS;
 	}
@@ -286,16 +274,10 @@ void init(void)
 	uint8_t i;
 	// Clear watchdog
 	MCUSR = 0;
-#ifdef ENABLE_WATCHDOG
 	// If you don't want the watchdog to do system reset, remove this chunk of code
 	wdt_reset();
-	WDTCSR |= _BV(WDE) | _BV(WDCE);
-	WDTCSR = _BV(WDE) | _BV(WDP2) | _BV(WDP1); // Set the WDT to system reset and 1s timeout
+	wdt_enable(WDTO_1S);
 	wdt_reset();
-#else
-	wdt_reset();
-	wdt_disable();
-#endif	
 
 	// Initialize MRBus address from EEPROM address 1
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
@@ -324,6 +306,7 @@ void init(void)
 	clearance = old_clearance = 0;
 	occupancy = old_occupancy = 0;
 	ext_occupancy = old_ext_occupancy = 0;
+	ext_occupancy2 = old_ext_occupancy2 = 0;
 	turnouts = old_turnouts = 0;
 }
 
@@ -426,57 +409,35 @@ void xioInputRead()
 
 void SetTurnout(uint8_t controlPoint, uint8_t points)
 {
+	uint8_t options = eeprom_read_byte((uint8_t*)EE_OPTIONS);
+
 	if (POINTS_UNAFFECTED == points)
 		return;
 
-// 0x01 - Reverse E turnout direction
-// 0x02 - Reverse W turnout direction
-
-	uint8_t options = eeprom_read_byte((uint8_t*)EE_OPTIONS);
-
 	switch(controlPoint)
 	{
-		case E_CONTROLPOINT:
-			if (POINTS_REVERSE_FORCE == points || (POINTS_REVERSE_SAFE == points && !(occupancy & OCC_E_OS_SECT)))
+		case CONTROLPOINT_1:
+			if (POINTS_REVERSE_FORCE == points || (POINTS_REVERSE_SAFE == points && !(occupancy & OCC_OS_SECT)))
 			{
-				turnouts |= E_PNTS_CNTL;
+				turnouts |= PNTS_CNTL;
 				// Implementation-specific behaviour - do whatever needs to happen to physically move the turnout here
 				if (options & 0x01)
-					xio1Outputs[3] |= E_PNTS_CNTL;
+					xio1Outputs[3] |= PNTS_CNTL;
 				else
-					xio1Outputs[3] &= ~(E_PNTS_CNTL); 
+					xio1Outputs[3] &= ~(PNTS_CNTL); 
 			}
-			else if (POINTS_NORMAL_FORCE == points || (POINTS_NORMAL_SAFE == points && !(occupancy & OCC_E_OS_SECT)))
+			else if (POINTS_NORMAL_FORCE == points || (POINTS_NORMAL_SAFE == points && !(occupancy & OCC_OS_SECT)))
 			{
-				turnouts &= ~(E_PNTS_CNTL);
+				turnouts &= ~(PNTS_CNTL);
 				// Implementation-specific behaviour - do whatever needs to happen to physically move the turnout here
 				if (options & 0x01)
-					xio1Outputs[3] &= ~(E_PNTS_CNTL); 
+					xio1Outputs[3] &= ~(PNTS_CNTL); 
 				else
-					xio1Outputs[3] |= E_PNTS_CNTL;
+					xio1Outputs[3] |= PNTS_CNTL;
 
 			}
 			break;
-
-		case W_CONTROLPOINT:
-			if (POINTS_REVERSE_FORCE == points || (POINTS_REVERSE_SAFE == points && !(occupancy & OCC_W_OS_SECT)))
-			{
-				turnouts |= W_PNTS_CNTL;
-				// Implementation-specific behaviour - do whatever needs to happen to physically move the turnout here
-				if (options & 0x02)
-					xio1Outputs[3] |= W_PNTS_CNTL;
-				else
-					xio1Outputs[3] &= ~(W_PNTS_CNTL);
-			}
-			else if (POINTS_NORMAL_FORCE == points || (POINTS_NORMAL_SAFE == points && !(occupancy & OCC_W_OS_SECT)))
-			{
-				turnouts &= ~(W_PNTS_CNTL);
-				// Implementation-specific behaviour - do whatever needs to happen to physically move the turnout here
-				if (options & 0x02)
-					xio1Outputs[3] &= ~(W_PNTS_CNTL);
-				else
-					xio1Outputs[3] |= W_PNTS_CNTL;
-			}
+		default:
 			break;
 	}
 }
@@ -485,11 +446,8 @@ uint8_t GetTurnout(uint8_t controlPoint)
 {
 	switch(controlPoint)
 	{
-		case E_CONTROLPOINT:
-			return ((turnouts & E_PNTS_CNTL)?1:0);
-
-		case W_CONTROLPOINT:
-			return ((turnouts & W_PNTS_CNTL)?1:0);
+		case CONTROLPOINT_1:
+			return ((turnouts & PNTS_CNTL)?1:0);
 	}
 
 	return(CLEARANCE_NONE);
@@ -499,11 +457,9 @@ uint8_t GetClearance(uint8_t controlPoint)
 {
 	switch(controlPoint)
 	{
-		case E_CONTROLPOINT:
+		case CONTROLPOINT_1:
 			return(clearance & 0x0F);
 
-		case W_CONTROLPOINT:
-			return((clearance>>4) & 0x0F);
 	}
 	return(CLEARANCE_NONE);
 }
@@ -517,12 +473,12 @@ void SetClearance(uint8_t controlPoint, uint8_t newClear)
 
 	switch(controlPoint)
 	{
-		case E_CONTROLPOINT:
+		case CONTROLPOINT_1:
 			if (CLEARANCE_NONE != newClear)
 			{
-				if (XOCC_E_TUMBLE & ext_occupancy)
+				if (XOCC_P_TUMBLE & ext_occupancy)
 					break;
-				if (OCC_E_OS_SECT & occupancy)
+				if (OCC_OS_SECT & occupancy)
 					break;
 				// FIXME: logic to prevent the CTC ends lining into each other
 			}
@@ -530,65 +486,13 @@ void SetClearance(uint8_t controlPoint, uint8_t newClear)
 			clearance |= newClear;
 			break;
 
-		case W_CONTROLPOINT:
-			if (CLEARANCE_NONE != newClear)
-			{
-				if (XOCC_W_TUMBLE & ext_occupancy)
-					break;
-				if (OCC_W_OS_SECT & occupancy)
-					break;	
-
-				// FIXME: logic to prevent the CTC ends lining into each other
-			}
-			
-			clearance &= 0x0F;
-			clearance |= newClear<<4;
+		default:
 			break;
 	}
 }
 
 void CodeCTCRoute(uint8_t controlPoint, uint8_t newPoints, uint8_t newClear)
 {
-	uint8_t turnoutPointsRequested = 0;
-
-	// This logic prevents you from lining the ends into each other
-	switch(newPoints)
-	{
-		case POINTS_NORMAL_FORCE:
-		case POINTS_NORMAL_SAFE:
-			turnoutPointsRequested = 0;
-			break;
-			
-		case POINTS_REVERSE_FORCE:
-		case POINTS_REVERSE_SAFE:
-			turnoutPointsRequested = 1;
-			break;
-			
-		// If the points aren't changing, then check to see how they're currently set
-		case POINTS_UNAFFECTED:
-		default:
-			if (controlPoint == E_CONTROLPOINT)
-				turnoutPointsRequested = (turnouts & E_PNTS_CNTL)?1:0;
-			else if (controlPoint == W_CONTROLPOINT)
-				turnoutPointsRequested = (turnouts & W_PNTS_CNTL)?1:0;
-	}
-	
-	switch(controlPoint)
-	{
-		case E_CONTROLPOINT:
-			if (CLEARANCE_EAST == GetClearance(W_CONTROLPOINT) 
-				&& CLEARANCE_WEST == newClear 
-				&& GetTurnout(W_CONTROLPOINT) == turnoutPointsRequested)
-				return;
-			break;
-		case W_CONTROLPOINT:
-			if (CLEARANCE_WEST == GetClearance(E_CONTROLPOINT) 
-				&& CLEARANCE_EAST == newClear 
-				&& GetTurnout(E_CONTROLPOINT) == turnoutPointsRequested)
-				return;
-			break;
-	}
-	
 	SetClearance(controlPoint, newClear);
 	SetTurnout(controlPoint, newPoints);
 }
@@ -624,16 +528,12 @@ typedef struct
 #define XIO_PORT_D  3
 #define XIO_PORT_E  4
 
-const SignalPinDefinition sigPinDefs[8] = 
+const SignalPinDefinition sigPinDefs[4] = 
 {
-	{SIG_W_PNTS_UPPER, XIO_PORT_A, _BV(0), XIO_PORT_A, _BV(1), XIO_PORT_A, _BV(2)},
-	{SIG_W_PNTS_LOWER, XIO_PORT_A, _BV(3), XIO_PORT_A, _BV(4), XIO_PORT_A, _BV(5)},
-	{SIG_W_MAIN      , XIO_PORT_A, _BV(6), XIO_PORT_A, _BV(7), XIO_PORT_B, _BV(0)},
-	{SIG_W_SIDING    , XIO_PORT_B, _BV(1), XIO_PORT_B, _BV(2), XIO_PORT_B, _BV(3)},
-	{SIG_E_PNTS_UPPER, XIO_PORT_B, _BV(4), XIO_PORT_B, _BV(5), XIO_PORT_B, _BV(6)},
-	{SIG_E_PNTS_LOWER, XIO_PORT_B, _BV(7), XIO_PORT_C, _BV(0), XIO_PORT_C, _BV(1)},
-	{SIG_E_MAIN      , XIO_PORT_C, _BV(2), XIO_PORT_C, _BV(3), XIO_PORT_C, _BV(4)},
-	{SIG_E_SIDING    , XIO_PORT_C, _BV(5), XIO_PORT_C, _BV(6), XIO_PORT_C, _BV(7)}
+	{SIG_PNTS_UPPER, XIO_PORT_B, _BV(4), XIO_PORT_B, _BV(5), XIO_PORT_B, _BV(6)},
+	{SIG_PNTS_LOWER, XIO_PORT_B, _BV(7), XIO_PORT_C, _BV(0), XIO_PORT_C, _BV(1)},
+	{SIG_MAIN      , XIO_PORT_C, _BV(2), XIO_PORT_C, _BV(3), XIO_PORT_C, _BV(4)},
+	{SIG_SIDING    , XIO_PORT_C, _BV(5), XIO_PORT_C, _BV(6), XIO_PORT_C, _BV(7)}
 };
 
 
@@ -737,201 +637,106 @@ void SignalsToOutputs(uint8_t invertSignalOutputs)
 						xio1Outputs[redByte] &= ~redMask;
 					break;
 			}
-
-
 		}
-
-
 	}
 }
 
 static inline void vitalLogic()
 {
-	uint8_t eastTurnoutLocked = (!(((turnouts & (E_PNTS_STATUS))?1:0) ^ ((turnouts & (E_PNTS_CNTL))?1:0)));
-	uint8_t westTurnoutLocked = (!(((turnouts & (W_PNTS_STATUS))?1:0) ^ ((turnouts & (W_PNTS_CNTL))?1:0)));
-	uint8_t eastCleared = CLEARANCE_NONE;
-	uint8_t westCleared = CLEARANCE_NONE;
+	uint8_t turnoutLocked = (!(((turnouts & (PNTS_STATUS))?1:0) ^ ((turnouts & (PNTS_CNTL))?1:0)));
+	uint8_t cleared = CLEARANCE_NONE;
 
 	// Start out with a safe default - everybody red
-	signalHeads[SIG_E_PNTS_UPPER] = ASPECT_RED;
-	signalHeads[SIG_E_PNTS_LOWER] = ASPECT_RED;
-	signalHeads[SIG_E_MAIN] = ASPECT_RED;
-	signalHeads[SIG_E_SIDING] = ASPECT_RED;
-
-	signalHeads[SIG_W_PNTS_UPPER] = ASPECT_RED;
-	signalHeads[SIG_W_PNTS_LOWER] = ASPECT_RED;
-	signalHeads[SIG_W_MAIN] = ASPECT_RED;
-	signalHeads[SIG_W_SIDING] = ASPECT_RED;
+	signalHeads[SIG_PNTS_UPPER] = ASPECT_RED;
+	signalHeads[SIG_PNTS_LOWER] = ASPECT_RED;
+	signalHeads[SIG_MAIN] = ASPECT_RED;
+	signalHeads[SIG_SIDING] = ASPECT_RED;
 
 	// Drop clearance if we see occupancy
-	if (occupancy & OCC_E_OS_SECT)
-		SetClearance(E_CONTROLPOINT, CLEARANCE_NONE);
-	if (occupancy & OCC_W_OS_SECT)
-		SetClearance(W_CONTROLPOINT, CLEARANCE_NONE);
+	if (occupancy & OCC_OS_SECT)
+		SetClearance(CONTROLPOINT_1, CLEARANCE_NONE);
 
-	eastCleared = GetClearance(E_CONTROLPOINT);
-	westCleared = GetClearance(W_CONTROLPOINT);
+	cleared = GetClearance(CONTROLPOINT_1);
 	
-	if (STATE_UNLOCKED == eastTurnoutState || STATE_RELOCKING == eastTurnoutState)
+	if (STATE_UNLOCKED == turnoutState || STATE_RELOCKING == turnoutState)
 	{
 
-		if(turnouts & (E_PNTS_STATUS))
+		if(turnouts & (PNTS_STATUS))
 		{
-			signalHeads[SIG_E_PNTS_LOWER] = ASPECT_FL_RED;
-			signalHeads[SIG_E_SIDING] = ASPECT_FL_RED;
+			signalHeads[SIG_PNTS_LOWER] = ASPECT_FL_RED;
+			signalHeads[SIG_SIDING] = ASPECT_FL_RED;
 		}
 		else
 		{
-			signalHeads[SIG_E_PNTS_UPPER] = ASPECT_FL_RED;
-			signalHeads[SIG_E_MAIN] = ASPECT_FL_RED;
+			signalHeads[SIG_PNTS_UPPER] = ASPECT_FL_RED;
+			signalHeads[SIG_MAIN] = ASPECT_FL_RED;
 		}
 	} 
-	else if (eastTurnoutLocked && CLEARANCE_EAST == eastCleared)
+	else if (turnoutLocked && CLEARANCE_EAST == cleared)
 	{
 		// Eastbound clearance at the east control point means frog->points movement direction
-		uint8_t head = (turnouts & (E_PNTS_STATUS))?SIG_E_SIDING:SIG_E_MAIN;
+		uint8_t head = (turnouts & (PNTS_STATUS))?SIG_SIDING:SIG_MAIN;
 		
-		if (XOCC_E_ADJOIN & ext_occupancy || OCC_E_OS_SECT & occupancy)
+		if (XOCC_P_ADJOIN & ext_occupancy || OCC_OS_SECT & occupancy)
 			signalHeads[head] = ASPECT_RED;
-		else if (XOCC_E_APPROACH & ext_occupancy)
+		else if (XOCC_P_APPROACH & ext_occupancy)
 			signalHeads[head] = ASPECT_YELLOW;
-		else if (XOCC_E_APPROACH2 & ext_occupancy)
+		else if (XOCC_P_APPROACH2 & ext_occupancy)
 			signalHeads[head] = ASPECT_FL_YELLOW;
 		else
 			signalHeads[head] = ASPECT_GREEN;
 	}
-	else if (eastTurnoutLocked && CLEARANCE_WEST == eastCleared)
+	else if (turnoutLocked && CLEARANCE_WEST == cleared)
 	{
 		// Westbound clearance at the east control point means points->frog movement direction	
-		if(turnouts & (E_PNTS_STATUS))
+		if(turnouts & (PNTS_STATUS))
 		{
 			// Lined to siding
-			if ((OCC_CTC_SIDING | OCC_E_OS_SECT) & occupancy)
-				signalHeads[SIG_E_PNTS_LOWER] = ASPECT_RED;
-			else if ( (XOCC_W_ADJOIN & ext_occupancy || OCC_W_OS_SECT & occupancy)
-				|| !(turnouts & W_PNTS_STATUS)
-				|| !westTurnoutLocked
-				|| westCleared != CLEARANCE_WEST)
-				signalHeads[SIG_E_PNTS_LOWER] = ASPECT_YELLOW;
+			if ((OCC_OS_SECT & occupancy) || (XOCC2_S_ADJOIN & ext_occupancy2))
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_RED;
+			else if (XOCC2_S_APPROACH & ext_occupancy2)
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_YELLOW;
+			else if (XOCC2_S_APPROACH2 & ext_occupancy2)
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_FL_YELLOW;
 			else
-				// Change this to GREEN if highball is allowed into the siding
-				signalHeads[SIG_E_PNTS_LOWER] = ASPECT_YELLOW;
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_GREEN;
 		} else {
 			// Lined to mainline
-			if ((OCC_CTC_MAIN | OCC_E_OS_SECT) & occupancy)
-				signalHeads[SIG_E_PNTS_UPPER] = ASPECT_RED;
-			else if ((XOCC_W_ADJOIN & ext_occupancy) || (OCC_W_OS_SECT & occupancy)
-				|| (turnouts & W_PNTS_STATUS)
-				|| !westTurnoutLocked
-				|| westCleared != CLEARANCE_WEST)
-				signalHeads[SIG_E_PNTS_UPPER] = ASPECT_YELLOW;
-			else if (XOCC_W_APPROACH & ext_occupancy)
-				signalHeads[SIG_E_PNTS_UPPER] = ASPECT_FL_YELLOW;
+			if ( ((OCC_OS_SECT) & occupancy) || (XOCC_M_ADJOIN & ext_occupancy))
+				signalHeads[SIG_PNTS_UPPER] = ASPECT_RED;
+			else if (XOCC_M_APPROACH & ext_occupancy)
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_YELLOW;
+			else if (XOCC_M_APPROACH2 & ext_occupancy)
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_FL_YELLOW;
 			else
-				signalHeads[SIG_E_PNTS_UPPER] = ASPECT_GREEN;
+				signalHeads[SIG_PNTS_LOWER] = ASPECT_GREEN;
 		}
 	}
 	// The else case is that the turnout isn't locked up or we're not cleared
 	// Good news - the signals are already defaulted to red
 
-	if (STATE_UNLOCKED == westTurnoutState || STATE_RELOCKING == westTurnoutState)
-	{
-		if(turnouts & (W_PNTS_STATUS))
-		{
-			signalHeads[SIG_W_PNTS_LOWER] = ASPECT_FL_RED;
-			signalHeads[SIG_W_SIDING] = ASPECT_FL_RED;
-		}
-		else
-		{
-			signalHeads[SIG_W_MAIN] = ASPECT_FL_RED;
-			signalHeads[SIG_W_PNTS_UPPER] = ASPECT_FL_RED;
-		}
-	} 
-	else if (westTurnoutLocked && CLEARANCE_WEST == westCleared)
-	{
-		// Eastbound clearance at the east control point means frog->points movement direction
-		uint8_t head = (turnouts & (W_PNTS_STATUS))?SIG_W_SIDING:SIG_W_MAIN;
-		
-		if (XOCC_W_ADJOIN & ext_occupancy || OCC_W_OS_SECT & occupancy)
-			signalHeads[head] = ASPECT_RED;
-		else if (XOCC_W_APPROACH & ext_occupancy)
-			signalHeads[head] = ASPECT_YELLOW;
-		else if (XOCC_W_APPROACH2 & ext_occupancy)
-			signalHeads[head] = ASPECT_FL_YELLOW;
-		else
-			signalHeads[head] = ASPECT_GREEN;
-	}
-	else if (westTurnoutLocked && CLEARANCE_EAST == westCleared)
-	{
-		// Westbound clearance at the east control point means points->frog movement direction	
-		if(turnouts & (W_PNTS_STATUS))
-		{
-			// Lined to siding
-			if ((OCC_CTC_SIDING | OCC_W_OS_SECT) & occupancy)
-				signalHeads[SIG_W_PNTS_LOWER] = ASPECT_RED;
-			else if ( (XOCC_W_ADJOIN & ext_occupancy || OCC_W_OS_SECT & occupancy)
-				|| !(turnouts & E_PNTS_STATUS)
-				|| !eastTurnoutLocked
-				|| eastCleared != CLEARANCE_EAST)
-				signalHeads[SIG_W_PNTS_LOWER] = ASPECT_YELLOW;
-			else
-				// Change this to GREEN if highball is allowed into the siding
-				signalHeads[SIG_W_PNTS_LOWER] = ASPECT_YELLOW;
-		} else {
-			// Lined to mainline
-			if ((OCC_CTC_MAIN | OCC_W_OS_SECT) & occupancy)
-				signalHeads[SIG_W_PNTS_UPPER] = ASPECT_RED;
-			else if ((XOCC_E_ADJOIN & ext_occupancy) || (OCC_E_OS_SECT & occupancy)
-				|| (turnouts & E_PNTS_STATUS)
-				|| !eastTurnoutLocked
-				|| eastCleared != CLEARANCE_EAST)
-				signalHeads[SIG_W_PNTS_UPPER] = ASPECT_YELLOW;
-			else if (XOCC_E_APPROACH & ext_occupancy)
-				signalHeads[SIG_W_PNTS_UPPER] = ASPECT_FL_YELLOW;
-			else
-				signalHeads[SIG_W_PNTS_UPPER] = ASPECT_GREEN;
-		}
-	}
-
-			
 	// Clear virtual occupancies
-	occupancy &= ~(OCC_VIRT_E_APPROACH | OCC_VIRT_E_ADJOIN | OCC_VIRT_W_APPROACH | OCC_VIRT_W_ADJOIN);
+	occupancy &= ~(OCC_VIRT_P_APPROACH | OCC_VIRT_P_ADJOIN | OCC_VIRT_M_APPROACH | OCC_VIRT_M_ADJOIN | OCC_VIRT_S_APPROACH | OCC_VIRT_S_ADJOIN);
 
 	// Calculate east CP virtual occupancies
-	if(!(((turnouts & (E_PNTS_STATUS))?1:0) ^ ((turnouts & (E_PNTS_CNTL))?1:0)))
+	if(!(((turnouts & (PNTS_STATUS))?1:0) ^ ((turnouts & (PNTS_CNTL))?1:0)))
 	{
 		// Turnout is properly lined one way or the other
-		if ((turnouts & E_PNTS_STATUS) && ( (ASPECT_RED == signalHeads[SIG_W_SIDING] || ASPECT_FL_RED == signalHeads[SIG_W_SIDING])))
-			occupancy |= OCC_VIRT_E_APPROACH;
-		else if ((!(turnouts & E_PNTS_STATUS)) && (ASPECT_RED == signalHeads[SIG_W_MAIN] || ASPECT_FL_RED == signalHeads[SIG_W_MAIN]))
-			occupancy |= OCC_VIRT_E_APPROACH;
+		if ((turnouts & PNTS_STATUS) && ( ASPECT_YELLOW == signalHeads[SIG_PNTS_LOWER] ))
+			occupancy |= OCC_VIRT_P_APPROACH;
+		else if ((!(turnouts & PNTS_STATUS)) && ( ASPECT_YELLOW == signalHeads[SIG_PNTS_UPPER] ))
+			occupancy |= OCC_VIRT_P_APPROACH;
 	
-		if (ASPECT_RED == signalHeads[SIG_E_PNTS_LOWER] && (ASPECT_RED == signalHeads[SIG_E_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_E_PNTS_UPPER]))
-			occupancy |= OCC_VIRT_E_ADJOIN;
+		if ((ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_LOWER]) && (ASPECT_RED == signalHeads[SIG_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_PNTS_UPPER]))
+			occupancy |= OCC_VIRT_P_ADJOIN;
 	} else {
 		// East Control Point improperly lined, trip virtual occupancy
-			occupancy |= OCC_VIRT_E_APPROACH | OCC_VIRT_E_ADJOIN;
-	}			
+			occupancy |= OCC_VIRT_P_APPROACH | OCC_VIRT_P_ADJOIN;
+	}
 
-	// Calculate west CP virtual occupancies
-	if(!(((turnouts & (W_PNTS_STATUS))?1:0) ^ ((turnouts & (W_PNTS_CNTL))?1:0)))
-	{
-		// Turnout is properly lined one way or the other
-		if ((turnouts & W_PNTS_STATUS) && ( (ASPECT_RED == signalHeads[SIG_E_SIDING] || ASPECT_FL_RED == signalHeads[SIG_E_SIDING]) ))
-			occupancy |= OCC_VIRT_W_APPROACH;
-		else if ((!(turnouts & W_PNTS_STATUS)) && (ASPECT_RED == signalHeads[SIG_E_MAIN] || ASPECT_FL_RED == signalHeads[SIG_E_MAIN]))
-			occupancy |= OCC_VIRT_W_APPROACH;
-	
-		if (ASPECT_RED == signalHeads[SIG_W_PNTS_LOWER] && (ASPECT_RED == signalHeads[SIG_W_PNTS_UPPER] || ASPECT_FL_RED == signalHeads[SIG_W_PNTS_UPPER]))
-			occupancy |= OCC_VIRT_W_ADJOIN;
-	} else {
-		// West Control Point improperly lined, trip virtual occupancy
-			occupancy |= OCC_VIRT_W_APPROACH | OCC_VIRT_W_ADJOIN;
-	}	
 }
 
-#define eastPointsUnlockedSwitch()  ((debounced_inputs[1] & E_PNTS_UNLOCK)?false:true)
-#define westPointsUnlockedSwitch()  ((debounced_inputs[1] & W_PNTS_UNLOCK)?false:true)
+#define pointsUnlockedSwitch()  ((debounced_inputs[1] & PNTS_UNLOCK)?false:true)
 
 int main(void)
 {
@@ -940,8 +745,6 @@ int main(void)
 
 	// Application initialization
 	init();
-
-	wdt_enable(WDTO_1S);
 
 	// Initialize a 100 Hz timer. 
 	initialize100HzTimer();
@@ -955,8 +758,7 @@ int main(void)
 	i2c_master_init();
 	xioInitialize();
 
-	CodeCTCRoute(E_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
-	CodeCTCRoute(W_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
+	CodeCTCRoute(CONTROLPOINT_1, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
 
 	while (1)
 	{
@@ -991,116 +793,60 @@ int main(void)
 				debounced_inputs[i] ^= ~(~delta | clock_a[i] | clock_b[i]);
 			}
 
-			switch(eastTurnoutState)
+			switch(turnoutState)
 			{
 				case STATE_LOCKED:
-					if (eastPointsUnlockedSwitch())
+					if (pointsUnlockedSwitch())
 					{
-						eastTimeCounter = eeprom_read_byte((uint8_t*)EE_UNLOCK_TIME);
-						eastTurnoutState = STATE_TIMERUN;
-						CodeCTCRoute(E_CONTROLPOINT, POINTS_UNAFFECTED, CLEARANCE_NONE);
+						timeCounter = eeprom_read_byte((uint8_t*)EE_UNLOCK_TIME);
+						turnoutState = STATE_TIMERUN;
+						CodeCTCRoute(CONTROLPOINT_1, POINTS_UNAFFECTED, CLEARANCE_NONE);
 					} else {
-						xio1Outputs[3] &= ~(E_PNTS_TIMELOCK_LED);
+						xio1Outputs[3] &= ~(PNTS_TIMELOCK_LED);
 					}
 					break;
 					
 				case STATE_TIMERUN:
 					if (events & EVENT_BLINKY)
-						xio1Outputs[3] &= ~(E_PNTS_TIMELOCK_LED);
+						xio1Outputs[3] &= ~(PNTS_TIMELOCK_LED);
 					else
-						xio1Outputs[3] |= E_PNTS_TIMELOCK_LED;
+						xio1Outputs[3] |= PNTS_TIMELOCK_LED;
 
-					if (!eastPointsUnlockedSwitch())
-						eastTurnoutState = STATE_LOCKED;
+					if (!pointsUnlockedSwitch())
+						turnoutState = STATE_LOCKED;
 
-					if (0 == eastTimeCounter)
-						eastTurnoutState = STATE_UNLOCKED;
+					if (0 == timeCounter)
+						turnoutState = STATE_UNLOCKED;
 					break;
 					
 				case STATE_UNLOCKED:
 					// FIXME: Set turnout position here
-					xio1Outputs[3] |= E_PNTS_TIMELOCK_LED;
-					if (xio1Inputs[1] & E_PNTS_LOCAL_DIR)
-						CodeCTCRoute(E_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
+					xio1Outputs[3] |= PNTS_TIMELOCK_LED;
+					if (xio1Inputs[1] & PNTS_LOCAL_DIR)
+						CodeCTCRoute(CONTROLPOINT_1, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
 					else
-						CodeCTCRoute(E_CONTROLPOINT, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
+						CodeCTCRoute(CONTROLPOINT_1, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
 
-					if (!eastPointsUnlockedSwitch())
-						eastTurnoutState = STATE_RELOCKING;
+					if (!pointsUnlockedSwitch())
+						turnoutState = STATE_RELOCKING;
 					break;
 
 				case STATE_RELOCKING:
-					if (xio1Inputs[1] & E_PNTS_LOCAL_DIR)
-						CodeCTCRoute(E_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
+					if (xio1Inputs[1] & PNTS_LOCAL_DIR)
+						CodeCTCRoute(CONTROLPOINT_1, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
 					else
-						CodeCTCRoute(E_CONTROLPOINT, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
+						CodeCTCRoute(CONTROLPOINT_1, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
 
-					if (!eastPointsUnlockedSwitch() && !(turnouts & (E_PNTS_STATUS)))
-						eastTurnoutState = STATE_LOCKED;
+					if (!pointsUnlockedSwitch() && !(turnouts & (PNTS_STATUS)))
+						turnoutState = STATE_LOCKED;
 
 					break;
 				
 				default: // No idea why we'd get here, but just in case...
-					eastTurnoutState = STATE_RELOCKING;
+					turnoutState = STATE_RELOCKING;
 					break;
 			} 
 
-			switch(westTurnoutState)
-			{
-				case STATE_LOCKED:
-					if (westPointsUnlockedSwitch())
-					{
-						westTimeCounter = eeprom_read_byte((uint8_t*)EE_UNLOCK_TIME);
-						westTurnoutState = STATE_TIMERUN;
-						CodeCTCRoute(W_CONTROLPOINT, POINTS_UNAFFECTED, CLEARANCE_NONE);
-					} else {
-						xio1Outputs[3] &= ~(W_PNTS_TIMELOCK_LED);
-					}
-					break;
-					
-				case STATE_TIMERUN:
-					if (events & EVENT_BLINKY)
-						xio1Outputs[3] &= ~(W_PNTS_TIMELOCK_LED);
-					else
-						xio1Outputs[3] |= W_PNTS_TIMELOCK_LED;
-
-					if (!westPointsUnlockedSwitch())
-						westTurnoutState = STATE_LOCKED;
-
-					if (0 == westTimeCounter)
-						westTurnoutState = STATE_UNLOCKED;
-					break;
-					
-				case STATE_UNLOCKED:
-					// FIXME: Set turnout position here
-					xio1Outputs[3] |= W_PNTS_TIMELOCK_LED;
-					if (xio1Inputs[1] & W_PNTS_LOCAL_DIR)
-						CodeCTCRoute(W_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
-					else
-						CodeCTCRoute(W_CONTROLPOINT, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
-
-					if (!westPointsUnlockedSwitch())
-						westTurnoutState = STATE_RELOCKING;
-					break;
-
-				case STATE_RELOCKING:
-					if (xio1Inputs[1] & W_PNTS_LOCAL_DIR)
-						CodeCTCRoute(W_CONTROLPOINT, POINTS_NORMAL_FORCE, CLEARANCE_NONE);
-					else
-						CodeCTCRoute(W_CONTROLPOINT, POINTS_REVERSE_FORCE, CLEARANCE_NONE);
-
-					if (!westPointsUnlockedSwitch() && !(turnouts & (W_PNTS_STATUS)))
-						westTurnoutState = STATE_LOCKED;
-
-					break;
-				
-				default: // No idea why we'd get here, but just in case...
-					westTurnoutState = STATE_RELOCKING;
-					break;
-			} 
-
-
-		
 			// Get the physical occupancy inputs from debounced
 			
 			// Figure out which occupancies are local or remote
@@ -1111,34 +857,22 @@ int main(void)
 				switch(i)
 				{
 					case 0:
-						if (0xFF == eeprom_read_byte((uint8_t*)(EE_E_OS_ADDR)))
-							remoteOccupancyMask &= ~OCC_E_OS_SECT;
-						break;
-					case 1:
-						if (0xFF == eeprom_read_byte((uint8_t*)(EE_W_OS_ADDR)))
-							remoteOccupancyMask &= ~OCC_W_OS_SECT;
-						break;
-					case 2:
-						if (0xFF == eeprom_read_byte((uint8_t*)(EE_MAIN_ADDR)))
-							remoteOccupancyMask &= ~OCC_CTC_MAIN;
-						break;
-					case 3:
-						if (0xFF == eeprom_read_byte((uint8_t*)(EE_SIDING_ADDR)))
-							remoteOccupancyMask &= ~OCC_CTC_SIDING;
+						if (0xFF == eeprom_read_byte((uint8_t*)(EE_OS_ADDR)))
+							remoteOccupancyMask &= ~OCC_OS_SECT;
 						break;
 				}
 			}
 
 			occupancy &= 0xF0 | remoteOccupancyMask;
 			occupancy |= (0x0F & (~remoteOccupancyMask)) & (debounced_inputs[1]>>4);
-			turnouts &= ~(E_PNTS_STATUS | W_PNTS_STATUS);
-			turnouts |= debounced_inputs[0] & (E_PNTS_STATUS | W_PNTS_STATUS);
+			turnouts &= ~(PNTS_STATUS);
+			turnouts |= debounced_inputs[0] & (PNTS_STATUS);
 
 			old_debounced_inputs[0] = debounced_inputs[0];
 			old_debounced_inputs[1] = debounced_inputs[1];
 
 			events &= ~(EVENT_READ_INPUTS);
-		}			
+		}
 
 		// Vital Logic
 		vitalLogic();
@@ -1169,6 +903,7 @@ int main(void)
 			old_clearance = clearance;
 			old_occupancy = occupancy;
 			old_ext_occupancy = ext_occupancy;
+			old_ext_occupancy2 = ext_occupancy2;
 			// Set changed such that a packet gets sent
 			changed = 1;
 		}
@@ -1243,14 +978,12 @@ Byte
 			txBuffer[MRBUS_PKT_LEN] = 14;
 			txBuffer[5] = 'S';
 
-			txBuffer[6] = ((signalHeads[SIG_E_SIDING]<<4) & 0xF0) | (signalHeads[SIG_E_MAIN] & 0x0F);
-			txBuffer[7] = ((signalHeads[SIG_E_PNTS_UPPER]<<4) & 0xF0) | (signalHeads[SIG_E_PNTS_LOWER] & 0x0F);
-			txBuffer[8] = ((signalHeads[SIG_W_SIDING]<<4) & 0xF0) | (signalHeads[SIG_W_MAIN] & 0x0F);
-			txBuffer[9] = ((signalHeads[SIG_W_PNTS_UPPER]<<4) & 0xF0) | (signalHeads[SIG_W_PNTS_LOWER] & 0x0F);
+			txBuffer[6] = ((signalHeads[SIG_SIDING]<<4) & 0xF0) | (signalHeads[SIG_MAIN] & 0x0F);
+			txBuffer[7] = ((signalHeads[SIG_PNTS_UPPER]<<4) & 0xF0) | (signalHeads[SIG_PNTS_LOWER] & 0x0F);
 
 			txBuffer[10] = (occupancy & 0x0F) | (turnouts & 0xF0);
 			
-			switch(GetClearance(E_CONTROLPOINT))
+			switch(GetClearance(CONTROLPOINT_1))
 			{
 				case CLEARANCE_EAST:
 					txBuffer[11] = MRB_STATUS_CP_CLEARED_EAST;
@@ -1264,45 +997,19 @@ Byte
 					break;
 			}
 
-			if (STATE_LOCKED != eastTurnoutState)
+			if (STATE_LOCKED != turnoutState)
 				txBuffer[11] |= MRB_STATUS_CP_MANUAL_UNLOCK;
 
-			if (turnouts & E_PNTS_STATUS)  // Low is normal, high is reverse
+			if (turnouts & PNTS_STATUS)  // Low is normal, high is reverse
 				txBuffer[11] |= MRB_STATUS_CP_SWITCH_REVERSE;
 			else
 				txBuffer[11] |= MRB_STATUS_CP_SWITCH_NORMAL;
 				
-			if (occupancy & OCC_VIRT_E_ADJOIN)
+			if (occupancy & OCC_VIRT_M_ADJOIN)
 				txBuffer[11] |= MRB_STATUS_CP_VOCC_ADJOIN;
-			if (occupancy & OCC_VIRT_E_APPROACH)
+			if (occupancy & OCC_VIRT_M_APPROACH)
 				txBuffer[11] |= MRB_STATUS_CP_VOCC_APPROACH;
 
-			switch(GetClearance(W_CONTROLPOINT))
-			{
-				case CLEARANCE_EAST:
-					txBuffer[12] = MRB_STATUS_CP_CLEARED_EAST;
-					break;
-				case CLEARANCE_WEST:
-					txBuffer[12] = MRB_STATUS_CP_CLEARED_WEST;
-					break;
-				case CLEARANCE_NONE:
-				default:
-					txBuffer[12] = MRB_STATUS_CP_CLEARED_NONE;
-					break;
-			}
-			
-			if (STATE_LOCKED != westTurnoutState)
-				txBuffer[11] |= MRB_STATUS_CP_MANUAL_UNLOCK;
-
-			if (turnouts & W_PNTS_STATUS)  // Low is normal, high is reverse
-				txBuffer[12] |= MRB_STATUS_CP_SWITCH_REVERSE;
-			else
-				txBuffer[12] |= MRB_STATUS_CP_SWITCH_NORMAL;
-
-			if (occupancy & OCC_VIRT_W_ADJOIN)
-				txBuffer[12] |= MRB_STATUS_CP_VOCC_ADJOIN;
-			if (occupancy & OCC_VIRT_W_APPROACH)
-				txBuffer[12] |= MRB_STATUS_CP_VOCC_APPROACH;
 
 			txBuffer[13] = i2cResetCounter;
 			mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
@@ -1400,17 +1107,13 @@ void PktHandler(void)
 			//  6 - Control point being manipulated
 			//  7 - Turnout normal/reverse
 			//  8 - Clear eastbound or westbound
-			if (E_CONTROLPOINT == rxBuffer[6] && STATE_LOCKED == eastTurnoutState)
-				CodeCTCRoute(E_CONTROLPOINT, rxBuffer[7], PktDirToClearance(rxBuffer[8]));
-			else if (W_CONTROLPOINT == rxBuffer[6] && STATE_LOCKED == westTurnoutState)
-				CodeCTCRoute(W_CONTROLPOINT, rxBuffer[7], PktDirToClearance(rxBuffer[8]));
+			if (CONTROLPOINT_1 == rxBuffer[6] && STATE_LOCKED == turnoutState)
+				CodeCTCRoute(CONTROLPOINT_1, rxBuffer[7], PktDirToClearance(rxBuffer[8]));
 			goto PktIgnore;
 
 		case 'T':
-			if (1 == rxBuffer[6] && STATE_LOCKED == eastTurnoutState)
-				CodeCTCRoute(E_CONTROLPOINT, rxBuffer[6], CLEARANCE_NONE);
-			else if (2 == rxBuffer[6] && STATE_LOCKED == westTurnoutState)
-				CodeCTCRoute(W_CONTROLPOINT, rxBuffer[6], CLEARANCE_NONE);		
+			if (1 == rxBuffer[6] && STATE_LOCKED == turnoutState)
+				CodeCTCRoute(CONTROLPOINT_1, rxBuffer[6], CLEARANCE_NONE);
 			goto PktIgnore;
 
 		case 'W':
@@ -1476,17 +1179,17 @@ void PktHandler(void)
 
 
 	/*************** NOT A PACKET WE EXPLICITLY UNDERSTAND, TRY BIT/BYTE RULES ***************/
-	for (i=0; i<12; i++)
+	for (i=0; i<13; i++)
 	{
 		uint8_t byte, bitset=0;
-		uint8_t srcAddr = eeprom_read_byte((uint8_t*)(i+EE_E_APRCH_ADDR));
+		uint8_t srcAddr = eeprom_read_byte((uint8_t*)(i+EE_P_APRCH_ADDR));
 		if (rxBuffer[MRBUS_PKT_SRC] != srcAddr || 0x00 == srcAddr)
 			continue;
 
-		if (rxBuffer[MRBUS_PKT_TYPE] != eeprom_read_byte((uint8_t*)(i+EE_E_APRCH_PKT)))
+		if (rxBuffer[MRBUS_PKT_TYPE] != eeprom_read_byte((uint8_t*)(i+EE_P_APRCH_PKT)))
 			continue;
 		
-		byte = eeprom_read_byte((uint8_t*)(i+EE_E_APRCH_SUBTYPE));
+		byte = eeprom_read_byte((uint8_t*)(i+EE_P_APRCH_SUBTYPE));
 		if ((0xFF != byte) && (rxBuffer[MRBUS_PKT_SUBTYPE] != byte))
 			continue;
 
@@ -1495,94 +1198,107 @@ void PktHandler(void)
 			y = byte = byte in data stream (6 is first data byte)
 			xxxyyyy
 		*/
-		byte = eeprom_read_byte((uint8_t*)(i+EE_E_APRCH_BITBYTE));
+		byte = eeprom_read_byte((uint8_t*)(i+EE_P_APRCH_BITBYTE));
 		bitset = rxBuffer[(byte & 0x1F)] & (1<<((byte>>5) & 0x07));
 
-		switch(i + EE_E_APRCH_ADDR)
+		switch(i + EE_P_APRCH_ADDR)
 		{
-			case EE_E_APRCH_ADDR:
+			case EE_M_APRCH_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_E_APPROACH;
+					ext_occupancy |= XOCC_M_APPROACH;
 				else
-					ext_occupancy &= ~(XOCC_E_APPROACH);
+					ext_occupancy &= ~(XOCC_M_APPROACH);
 				break;
 
-			case EE_E_APRCH2_ADDR:
+			case EE_M_APRCH2_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_E_APPROACH2;
+					ext_occupancy |= XOCC_M_APPROACH2;
 				else
-					ext_occupancy &= ~(XOCC_E_APPROACH2);
+					ext_occupancy &= ~(XOCC_M_APPROACH2);
 				break;
 				
-			case EE_E_ADJ_ADDR:
+			case EE_M_ADJ_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_E_ADJOIN;
+					ext_occupancy |= XOCC_M_ADJOIN;
 				else
-					ext_occupancy &= ~(XOCC_E_ADJOIN);
+					ext_occupancy &= ~(XOCC_M_ADJOIN);
 				break;
 			
-			case EE_W_APRCH_ADDR:
+			case EE_M_TUMBLE_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_W_APPROACH;
+					ext_occupancy |= XOCC_M_TUMBLE;
 				else
-					ext_occupancy &= ~(XOCC_W_APPROACH);
-				break;
-
-			case EE_W_APRCH2_ADDR:
-				if (bitset)
-					ext_occupancy |= XOCC_W_APPROACH2;
-				else
-					ext_occupancy &= ~(XOCC_W_APPROACH2);
+					ext_occupancy &= ~(XOCC_M_TUMBLE);
 				break;
 				
-			case EE_W_ADJ_ADDR:
+				
+				
+			case EE_P_APRCH_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_W_ADJOIN;
+					ext_occupancy |= XOCC_P_APPROACH;
 				else
-					ext_occupancy &= ~(XOCC_W_ADJOIN);
+					ext_occupancy &= ~(XOCC_P_APPROACH);
 				break;
 
-			case EE_W_TUMBLE_ADDR:
+			case EE_P_APRCH2_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_W_TUMBLE;
+					ext_occupancy |= XOCC_P_APPROACH2;
 				else
-					ext_occupancy &= ~(XOCC_W_TUMBLE);
+					ext_occupancy &= ~(XOCC_P_APPROACH2);
+				break;
+				
+			case EE_P_ADJ_ADDR:
+				if (bitset)
+					ext_occupancy |= XOCC_P_ADJOIN;
+				else
+					ext_occupancy &= ~(XOCC_P_ADJOIN);
+				break;
+			
+			case EE_P_TUMBLE_ADDR:
+				if (bitset)
+					ext_occupancy |= XOCC_P_TUMBLE;
+				else
+					ext_occupancy &= ~(XOCC_P_TUMBLE);
 				break;
 
-			case EE_E_TUMBLE_ADDR:
+
+			case EE_S_APRCH_ADDR:
 				if (bitset)
-					ext_occupancy |= XOCC_E_TUMBLE;
+					ext_occupancy2 |= XOCC2_S_APPROACH;
 				else
-					ext_occupancy &= ~(XOCC_E_TUMBLE);
+					ext_occupancy2 &= ~(XOCC2_S_APPROACH);
 				break;
 
-			case EE_E_OS_ADDR:
+			case EE_S_APRCH2_ADDR:
 				if (bitset)
-					occupancy |= OCC_E_OS_SECT;
+					ext_occupancy2 |= XOCC2_S_APPROACH2;
 				else
-					occupancy &= ~(OCC_E_OS_SECT);
+					ext_occupancy2 &= ~(XOCC2_S_APPROACH2);
+				break;
+				
+			case EE_S_ADJ_ADDR:
+				if (bitset)
+					ext_occupancy2 |= XOCC2_S_ADJOIN;
+				else
+					ext_occupancy2 &= ~(XOCC2_S_ADJOIN);
+				break;
+			
+			case EE_S_TUMBLE_ADDR:
+				if (bitset)
+					ext_occupancy2 |= XOCC2_S_TUMBLE;
+				else
+					ext_occupancy2 &= ~(XOCC2_S_TUMBLE);
 				break;
 
-			case EE_W_OS_ADDR:
+
+			case EE_OS_ADDR:
 				if (bitset)
-					occupancy |= OCC_W_OS_SECT;
+					occupancy |= OCC_OS_SECT;
 				else
-					occupancy &= ~(OCC_W_OS_SECT);
+					occupancy &= ~(OCC_OS_SECT);
 				break;
 
-			case EE_MAIN_ADDR:
-				if (bitset)
-					occupancy |= OCC_CTC_MAIN;
-				else
-					occupancy &= ~(OCC_CTC_MAIN);
-				break;
 
-			case EE_SIDING_ADDR:
-				if (bitset)
-					occupancy |= OCC_CTC_SIDING;
-				else
-					occupancy &= ~(OCC_CTC_SIDING);
-				break;
 		}
 	}
 	//*************** END PACKET HANDLER  ***************
